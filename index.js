@@ -8,7 +8,8 @@ let jogo = {
     rodadas: 0,
     posvenc: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],  // Posição vencedora na matriz
     [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]],
-    nrovenc: -1  // linha, coluna ou diagonal vencedora 0 a 7 (-1 empate ou em jogo)
+    nrovenc: -1,  // linha, coluna ou diagonal vencedora 0 a 7 (-1 empate ou em jogo)
+    vencedor: 0 // soma das posições vencedoras para validação do vencedor. (0 empate)
 }
 let cron = {  // cronômetro
     min: 0,
@@ -43,6 +44,7 @@ function eventos(pev) {
                 som(snd_click, 1, 1.2);
                 document.getElementById(pev.target.id).innerHTML = 'X';
                 jogo.matriz[lin][col] = 1;  // insere na matriz (lin, col) o valor 1 (usuário)
+                console.log("\n\n RODADA " + jogo.rodadas + "\n O usuário jogou...");
                 jogo.rodadas++;  // uma rodada a mais
                 jogo.jogador = 2;  // cpu (2) é a próxima a jogar 
                 fimJogo();  // verifica fim do jogo após a jogada do usuário
@@ -60,11 +62,14 @@ function cpu() {
         Caso retorne 2: Chama DefendeIA() - FEITO
         AtacaIA() - jogada inicial evita os botões 2, 4, 6, 8 (round 1 ou 2) - FEITO
                   - pega posições que a soma é igual a 5 ou 10 (10 é prioridade, pois é ataque final)- FEITO
-                    * das posições vitoriosas "selecionadas", caso o 5 não esteja no meio (índice 1), jogar no canto oposto. - NÃO FEITO
+                    * das posições vitoriosas "selecionadas", caso o 5 não esteja no meio (índice 1), jogar no canto oposto. - FEITO
+                  - jogada aleatória - FEITO
+                  - log das jogadas - FEITO
     */
 
+    console.log("\n\n RODADA " + jogo.rodadas);
     if (!jogadaIA()) {
-        alert("Jogada aleatória")
+        console.log("IA - Jogada aleatória")
         do {   // gera na matriz (lin, col) uma posição vazia (0)
             lin = Math.floor(Math.random() * 3);  // gera uma linha de 0 a 2
             col = Math.floor(Math.random() * 3);  // gera uma coluna de 0 a 2
@@ -97,10 +102,12 @@ function fimJogo() {
 
     for (let i = 0; i < 8; i++) {
         if (somas[i] === 3) {  // soma 3 indica X como ganhador
+            jogo.vencedor = somas[i];
             som(snd_palmas, 0.8, 1);
             jogo.nrovenc = i;  // armazena a linha, coluna ou diagonal do vencedor (usuário)
             fim = true;
         } else if (somas[i] === 15) {  // soma 15 indica O como ganhador
+            jogo.vencedor = somas[i];
             som(snd_risada, 1, 1.4);
             jogo.nrovenc = i;  // armazena a linha, coluna ou diagonal do vencedor (cpu)
             fim = true;
@@ -125,6 +132,15 @@ function resultado() {
         for (let bt of jogo.posvenc[jogo.nrovenc]) {  // altera a cor da lin, col ou diag vencedora
             document.getElementById('b' + bt).style.backgroundColor = 'orange';
         }
+    }
+
+    console.log("\n\n RODADA " + jogo.rodadas);
+    if (jogo.vencedor === 3 && jogo.nrovenc !== -1) {
+        console.log("Usuário venceu o jogo!");
+    } else if (jogo.vencedor === 15 && jogo.nrovenc !== -1) {
+        console.log("CPU venceu o jogo!");
+    } else {
+        console.log("O jogo empatou.");
     }
 }
 
@@ -155,6 +171,7 @@ function inicio() {
     jogo.matriz = [[0, 0, 0],
     [0, 0, 0],
     [0, 0, 0]];  // 0: vazio, 1: X e 5: O
+    console.clear();
     jogo.rodadas = 0;
     jogo.nrovenc = -1;  // -1 indica empate ou em jogo
     for (let i = 0; i < 9; i++) {  // apaga o conteúdos dos botôes (matriz de jogo)
@@ -188,34 +205,43 @@ function somatoria() {
 
 function jogadaIA() {
 
-    let soma = somatoria();
 
-    for (let i = 0; i < 8; i++) {
-        if (soma[i] === 2) {
+    if (Math.floor(Math.random() * 10) < 4) {
 
-            return defendeIA(); //retorno evita jogada aleatória da CPU
+        return false;
+
+    } else {
+
+        let soma = somatoria();
+
+        for (let i = 0; i < 8; i++) {
+            if (soma[i] === 2) {
+
+                return defendeIA(); //retorno evita jogada aleatória da CPU
 
 
-        } else if (i == 7) {
+            } else if (i == 7) {
 
-            return atacaIA(); //retorno evita jogada aleatória da CPU
+                return atacaIA(); //retorno evita jogada aleatória da CPU
 
+            }
         }
+
+        console.log("!!! - Erro a ser tratado na aleatoriedade da jogadaIA(). Chegou ao ultimo return false.");
+        return false;
+
     }
-
-    //return false; //retorno permite jogada aleatória da CPU
-
 }
 
 function defendeIA() {
-    alert('entrou defesa');
+    console.log('IA - Entrou defesa');
 
     let soma = somatoria();
 
     for (let i = 0; i < 8; i++) {
 
         if (soma[i] == 10) {
-            alert("Possível ataque final");
+            console.log("...Possível ataque final");
             return atacaIA();
 
         }
@@ -225,7 +251,7 @@ function defendeIA() {
     for (let i = 0; i < 8; i++) {
 
         if (soma[i] === 2) {
-            alert("Defesa normal");
+            console.log("...Defesa normal");
             for (let j = 0; j < jogo.posvenc[i].length; j++) {
 
                 let botao = jogo.posvenc[i][j];
@@ -255,20 +281,18 @@ function defendeIA() {
 }
 
 function atacaIA() {
-    alert("Entrou no ataque");
+    console.log("IA - Entrou no ataque");
 
     let somas = somatoria();
 
     if (jogo.rodadas === 0 || jogo.rodadas === 1) { //PRIMEIRA JOGADA DA CPU
-        alert("Entrou primeira jogada CPU")
+        console.log("...Primeira jogada CPU");
 
         do {   // gera na matriz (lin, col) uma posição vazia (0)
             lin = Math.floor(Math.random() * 3);  // gera uma linha de 0 a 2
             col = Math.floor(Math.random() * 3);  // gera uma coluna de 0 a 2
             btn = lin * 3 + col;  // calcula qual botão foi "escolhido" pela cpu
         } while (jogo.matriz[lin][col] !== 0 ||/*&&*/ (btn === 1 || btn === 3 || btn === 5 || btn === 7));
-        alert('Condição while: ' + (jogo.matriz[lin][col] !== 0 ||/*&&*/ (btn === 1 || btn === 3 || btn === 5 || btn === 7)));
-        alert((btn === 1 || btn === 3 || btn === 5 || btn === 7));
         som(snd_click, 1, 1.2);
         document.getElementById('b' + btn).innerHTML = 'O';  // insere círculo (O) na posição 
         jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
@@ -282,7 +306,7 @@ function atacaIA() {
 
         for (let i = 0; i < 8; i++) {
             if (somas[i] === 10) {
-                alert("ATAQUE FINAL")
+                console.log("...ATAQUE FINAL");
 
                 for (let j = 0; j < jogo.posvenc[i].length; j++) {
 
@@ -310,25 +334,26 @@ function atacaIA() {
 
         for (let i = 0; i < 8; i++) {
             if (somas[i] === 5) {
-                alert("ataque soma 5")
+                console.log("...Ataque padrão");
 
                 for (let j = 0; j < jogo.posvenc[i].length; j++) {
 
                     let botao = undefined
 
-                    if (jogo.posvenc[i][0] === 0 && jogo.posvenc[i][1] === 0) {
-                        botao = jogo.posvenc[i][0];
-                        alert("primeira indice")
+                    if (jogo.matriz[Math.floor(jogo.posvenc[i][1] / 3)][jogo.posvenc[i][1] % 3] == 0) { //verifica na matriz se o botão da pos. vencedora do meio esta vazio
 
-                    } else if (jogo.posvenc[i][2] === 0 && jogo.posvenc[i][1] === 0) {
-                        botao = jogo.posvenc[i][2];
-                        alert("segundo indice")
+                        if (jogo.matriz[Math.floor(jogo.posvenc[i][0] / 3)][jogo.posvenc[i][0] % 3] == 0) {
+                            botao = jogo.posvenc[i][0];
+                        } else if (jogo.matriz[Math.floor(jogo.posvenc[i][2] / 3)][jogo.posvenc[i][2] % 3] == 0) {
+                            botao = jogo.posvenc[i][2];
+                        } else {
+                            console.log('!!! - Erro a ser tratado função de defesa. Verificação valor posições vencedoras na matriz');
+                        }
 
                     } else {
+
                         botao = jogo.posvenc[i][j];
-                        alert("nem ligou indice    " + j);
                     }
-                    alert(jogo.posvenc[i][0] + ' ' + jogo.posvenc[i][1] + ' ' + jogo.posvenc[i][2]);
 
                     let lin = Math.floor(botao / 3);
                     let col = botao % 3;
