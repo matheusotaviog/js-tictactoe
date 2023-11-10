@@ -2,6 +2,8 @@ const snd_click = './snd/click.mp3';
 const snd_inicio = './snd/inicio.mp3';
 const snd_risada = './snd/risada.mp3';
 const snd_palmas = './snd/palmas.mp3';
+const COLORS = ['green', 'blue', 'red'];
+
 let jogo = {
     matriz: [],  // matriz de jogo (contém 0, 1 ou 5)
     jogador: -1,  // jogador: 1 (usuário), 2 (cpu), 0 introdução e -1 pausa
@@ -9,8 +11,12 @@ let jogo = {
     posvenc: [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],  // Posição vencedora na matriz
     [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]],
     nrovenc: -1,  // linha, coluna ou diagonal vencedora 0 a 7 (-1 empate ou em jogo)
-    vencedor: 0 // soma das posições vencedoras para validação do vencedor. (0 empate)
+    vencedor: 0, // soma das posições vencedoras para validação do vencedor. (0 empate)
+    dificultLevel:null,
+    cpuChance: null,
+    cpuCaractere: ['O', 'Ø']
 }
+
 let cron = {  // cronômetro
     min: 0,
     seg: 0,
@@ -26,13 +32,27 @@ function eventos(pev) {
         return;
     }
     if (pev.target.id === 'iniciar' && jogo.jogador !== 0) {
+        jogo.dificultLevel = parseInt(prompt('(1 - Fácil; 2 - Médio; 3 - Difícil): '));
+
+        if(isNaN(jogo.dificultLevel)) {
+            return;
+        } else if(jogo.dificultLevel == 1) {
+            jogo.cpuChance = 7;
+        } else if(jogo.dificultLevel == 2) {
+            jogo.cpuChance = 5;
+        } else if(jogo.dificultLevel == 3) {
+            jogo.cpuChance = 0;
+        }
+
+        console.log(jogo.cpuChance);
+
         clearInterval(cron.tempo);  // remove a função do cronômetro
         som(snd_inicio, 1, 1.2);
         jogo.jogador = 0;
         cron.min = cron.seg = 0;
         document.getElementById('cron').innerHTML = '00:00';
         for (let i = 0; i < 9; i++) {
-            document.getElementById('b' + i).style.backgroundColor = 'orange';
+            document.getElementById('b' + i).style.backgroundColor = COLORS[jogo.dificultLevel-1];
         }
         inicio3();
     } else {
@@ -76,7 +96,7 @@ function cpu() {
         } while (jogo.matriz[lin][col] !== 0);  // enquanto diferente de vazio (0)
         som(snd_click, 1, 1.2);
         let bt = lin * 3 + col;  // calcula qual botão foi "escolhido" pela cpu
-        document.getElementById('b' + bt).innerHTML = 'O';  // insere círculo (O) na posição 
+        document.getElementById('b' + bt).innerHTML = jogo.cpuCaractere[0];  // insere círculo (O) na posição 
         jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
         jogo.jogador = 1;  // usuário (1) é o próximo a jogar
         jogo.rodadas++;  // uma rodada a mais
@@ -130,7 +150,7 @@ function resultado() {
     }
     if (jogo.nrovenc !== -1) {  // verifica se houve vencedor
         for (let bt of jogo.posvenc[jogo.nrovenc]) {  // altera a cor da lin, col ou diag vencedora
-            document.getElementById('b' + bt).style.backgroundColor = 'orange';
+            document.getElementById('b' + bt).style.backgroundColor = COLORS[jogo.dificultLevel-1];
         }
     }
 
@@ -206,7 +226,7 @@ function somatoria() {
 function jogadaIA() {
 
 
-    if (Math.floor(Math.random() * 10) < 4) {
+    if (Math.floor(Math.random() * 10) < jogo.cpuChance) {
 
         return false;
 
@@ -262,7 +282,7 @@ function defendeIA() {
                 if (jogo.matriz[lin][col] === 0) {
 
                     som(snd_click, 1, 1.2);
-                    document.getElementById('b' + botao).innerHTML = 'O';  // insere círculo (O) na posição 
+                    document.getElementById('b' + botao).innerHTML = jogo.cpuCaractere[1];  // insere círculo (O) na posição 
                     jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
                     jogo.jogador = 1;  // usuário (1) é o próximo a jogar
                     jogo.rodadas++;  // uma rodada a mais
@@ -294,7 +314,7 @@ function atacaIA() {
             btn = lin * 3 + col;  // calcula qual botão foi "escolhido" pela cpu
         } while (jogo.matriz[lin][col] !== 0 ||/*&&*/ (btn === 1 || btn === 3 || btn === 5 || btn === 7));
         som(snd_click, 1, 1.2);
-        document.getElementById('b' + btn).innerHTML = 'O';  // insere círculo (O) na posição 
+        document.getElementById('b' + btn).innerHTML = jogo.cpuCaractere[1];  // insere círculo (O) na posição 
         jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
         jogo.jogador = 1;  // usuário (1) é o próximo a jogar
         jogo.rodadas++;  // uma rodada a mais
@@ -318,7 +338,7 @@ function atacaIA() {
                     if (jogo.matriz[lin][col] === 0) {
 
                         som(snd_click, 1, 1.2);
-                        document.getElementById('b' + botao).innerHTML = 'O';  // insere círculo (O) na posição 
+                        document.getElementById('b' + botao).innerHTML = jogo.cpuCaractere[1];  // insere círculo (O) na posição 
                         jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
                         jogo.jogador = 1;  // usuário (1) é o próximo a jogar
                         jogo.rodadas++;  // uma rodada a mais
@@ -363,7 +383,7 @@ function atacaIA() {
                         jogo.matriz[lin][col] = 5;
 
                         som(snd_click, 1, 1.2);
-                        document.getElementById('b' + botao).innerHTML = 'O';  // insere círculo (O) na posição 
+                        document.getElementById('b' + botao).innerHTML = jogo.cpuCaractere[1];  // insere círculo (O) na posição 
                         jogo.matriz[lin][col] = 5;  // insere na matriz (lin, col) o valor 5 (cpu)
                         jogo.jogador = 1;  // usuário (1) é o próximo a jogar
                         jogo.rodadas++;  // uma rodada a mais
